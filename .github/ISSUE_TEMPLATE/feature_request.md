@@ -1,8 +1,8 @@
 ---
 name: Feature request
 about: Suggest a new capability
-title: ""
-labels: ["type:feat"]
+title: ''
+labels: ['type:feat']
 ---
 
 ## Problem
