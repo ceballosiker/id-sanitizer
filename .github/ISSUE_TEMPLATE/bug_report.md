@@ -1,8 +1,8 @@
 ---
 name: Bug report
 about: Something isn't working as expected
-title: ""
-labels: ["type:fix"]
+title: ''
+labels: ['type:fix']
 ---
 
 ## What happened
