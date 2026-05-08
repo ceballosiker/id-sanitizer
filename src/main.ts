@@ -2,7 +2,8 @@ import '@fontsource-variable/fraunces/opsz.css';
 import '@fontsource-variable/jetbrains-mono/index.css';
 import './style.css';
 import { setupUpload } from './upload';
-import { createCanvasRenderer } from './canvas';
+import { createCanvasRenderer, type CanvasRenderer } from './canvas';
+import { setupRectTool } from './rect-tool';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <header>
@@ -27,9 +28,21 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 const uploadEl = document.querySelector<HTMLDivElement>('#upload')!;
 
+// Hoisted so future tools (#12 undo/redo, #13 download) can reach the renderer.
+let renderer: CanvasRenderer | null = null;
+
 setupUpload(uploadEl, (file) => {
-  const renderer = createCanvasRenderer(uploadEl);
-  void renderer.load(file).catch((err: unknown) => {
-    console.error('Canvas load failed:', err);
-  });
+  renderer = createCanvasRenderer(uploadEl);
+  void renderer
+    .load(file)
+    .then(() => {
+      const canvas = renderer?.getCanvas();
+      if (!canvas) return;
+      setupRectTool(canvas, (overlays) => {
+        renderer?.setOverlays(overlays);
+      });
+    })
+    .catch((err: unknown) => {
+      console.error('Canvas load failed:', err);
+    });
 });
