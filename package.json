@@ -28,5 +28,9 @@
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.10",
     "vitest": "^4.1.5"
+  },
+  "dependencies": {
+    "@fontsource-variable/fraunces": "^5.2.9",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8"
   }
 }
