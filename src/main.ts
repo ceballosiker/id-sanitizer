@@ -2,6 +2,7 @@ import '@fontsource-variable/fraunces/opsz.css';
 import '@fontsource-variable/jetbrains-mono/index.css';
 import './style.css';
 import { setupUpload } from './upload';
+import { createCanvasRenderer } from './canvas';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <header>
@@ -26,6 +27,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 const uploadEl = document.querySelector<HTMLDivElement>('#upload')!;
 
-setupUpload(uploadEl, (_file, url) => {
-  uploadEl.innerHTML = `<img class="upload-preview" alt="Uploaded image preview" src="${url}" />`;
+setupUpload(uploadEl, (file) => {
+  const renderer = createCanvasRenderer(uploadEl);
+  void renderer.load(file).catch((err: unknown) => {
+    console.error('Canvas load failed:', err);
+  });
 });
