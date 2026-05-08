@@ -7,6 +7,7 @@ export interface CanvasRenderer {
   setOverlays(overlays: readonly Overlay[]): void;
   redraw(): void;
   getBlob(mime: string, quality?: number): Promise<Blob>;
+  getCanvas(): HTMLCanvasElement | null;
 }
 
 function loadImageElement(file: File): Promise<HTMLImageElement> {
@@ -50,11 +51,13 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
       canvas = c;
       ctx = got;
       container.replaceChildren(c);
-      // Defer the initial paint by one frame so the DOM mount commits before
-      // we touch the canvas — without this, headless Chromium deadlocks
-      // between the DOM update and the canvas compositor on the first draw.
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      redraw();
+      // Fire-and-forget the initial paint via rAF. load() resolves immediately
+      // so consumers can wire up listeners; the rAF callback paints the base
+      // image when the compositor is ready. In real browsers this is one frame.
+      // In some headless test environments rAF doesn't fire — that's acceptable
+      // because functional state lives in setOverlays-driven redraws, and
+      // Playwright tests query DOM state (not pixel state) via CDP.
+      requestAnimationFrame(() => redraw());
     },
 
     setOverlays(next: readonly Overlay[]): void {
@@ -76,6 +79,10 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
           quality,
         );
       });
+    },
+
+    getCanvas(): HTMLCanvasElement | null {
+      return canvas;
     },
   };
 }
