@@ -83,3 +83,18 @@ test('error auto-clears when a valid upload follows a rejected one', async ({ pa
   await expect(page.locator('.upload-preview')).toBeVisible();
   await expect(page.locator('.upload-error')).toHaveCount(0);
 });
+
+test('canvas preview matches the uploaded image dimensions', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type=file]', {
+    name: 'sample.png',
+    mimeType: 'image/png',
+    buffer: tinyPngBuffer,
+  });
+  const preview = page.locator('.upload-preview');
+  await expect(preview).toBeVisible();
+  await expect(preview).toHaveJSProperty('tagName', 'CANVAS');
+  // tinyPngBuffer is a 1×1 PNG — the canvas backing buffer should match
+  await expect(preview).toHaveJSProperty('width', 1);
+  await expect(preview).toHaveJSProperty('height', 1);
+});
