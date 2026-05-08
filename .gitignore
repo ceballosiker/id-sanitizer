@@ -147,3 +147,6 @@ playwright-report/
 test-results/
 blob-report/
 .playwright/
+
+# Superpowers brainstorm specs and plans (working artifacts, not project docs)
+docs/superpowers/
