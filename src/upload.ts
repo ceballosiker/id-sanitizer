@@ -20,10 +20,7 @@ const DROPZONE_HTML = `
 </div>
 `;
 
-export function setupUpload(
-  container: HTMLElement,
-  onImageLoaded: (file: File, objectUrl: string) => void,
-): void {
+export function setupUpload(container: HTMLElement, onImageLoaded: (file: File) => void): void {
   container.innerHTML = DROPZONE_HTML;
 
   const dropzone = container.querySelector<HTMLDivElement>('.dropzone')!;
@@ -48,7 +45,7 @@ export function setupUpload(
       showError('Unsupported file type. Use JPG, PNG, or WebP.');
       return;
     }
-    onImageLoaded(file, URL.createObjectURL(file));
+    onImageLoaded(file);
   };
 
   dropzone.addEventListener('dragover', (e) => {
