@@ -20,3 +20,66 @@ test('app shell renders semantic landmarks and offline badge', async ({ page }) 
   );
   await expect(footer.getByRole('link', { name: 'License' })).toHaveAttribute('href', /\/LICENSE$/);
 });
+
+// 1×1 transparent PNG, smallest valid PNG (67 bytes after base64 decode).
+const tinyPngBuffer = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  'base64',
+);
+
+test('upload via file picker shows preview and removes the dropzone', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type=file]', {
+    name: 'sample.png',
+    mimeType: 'image/png',
+    buffer: tinyPngBuffer,
+  });
+  await expect(page.locator('.upload-preview')).toBeVisible();
+  await expect(page.locator('.dropzone')).toHaveCount(0);
+});
+
+test('upload via file picker rejects unsupported types with inline error', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type=file]', {
+    name: 'doc.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('hello'),
+  });
+  await expect(page.locator('.upload-error')).toContainText(/jpg, png, or webp/i);
+  await expect(page.locator('.upload-preview')).toHaveCount(0);
+});
+
+test('upload via drag-drop shows preview', async ({ page }) => {
+  await page.goto('/');
+
+  const dataTransfer = await page.evaluateHandle((b64) => {
+    const binary = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const file = new File([binary], 'sample.png', { type: 'image/png' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    return dt;
+  }, tinyPngBuffer.toString('base64'));
+
+  await page.dispatchEvent('.dropzone', 'drop', { dataTransfer });
+
+  await expect(page.locator('.upload-preview')).toBeVisible();
+});
+
+test('error auto-clears when a valid upload follows a rejected one', async ({ page }) => {
+  await page.goto('/');
+
+  await page.setInputFiles('input[type=file]', {
+    name: 'doc.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('hello'),
+  });
+  await expect(page.locator('.upload-error')).toBeVisible();
+
+  await page.setInputFiles('input[type=file]', {
+    name: 'sample.png',
+    mimeType: 'image/png',
+    buffer: tinyPngBuffer,
+  });
+  await expect(page.locator('.upload-preview')).toBeVisible();
+  await expect(page.locator('.upload-error')).toHaveCount(0);
+});
