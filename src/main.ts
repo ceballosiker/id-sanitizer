@@ -5,6 +5,7 @@ import { setupUpload } from './upload';
 import { createCanvasRenderer, type CanvasRenderer } from './canvas';
 import { setupRectTool, type Rect, type RectTool } from './rect-tool';
 import { createHistory, type History } from './history';
+import { buildFilename, downloadBlob, formatToMime, type Format } from './download';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <header>
@@ -37,6 +38,20 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     >
       Redo
     </button>
+    <div class="toolbar-export">
+      <fieldset class="format-toggle">
+        <legend class="visually-hidden">Format</legend>
+        <label>
+          <input type="radio" name="format" value="png" checked />
+          <span>PNG</span>
+        </label>
+        <label>
+          <input type="radio" name="format" value="jpeg" />
+          <span>JPEG</span>
+        </label>
+      </fieldset>
+      <button type="button" data-action="download">Download</button>
+    </div>
   </div>
   <div id="upload"></div>
 </main>
@@ -51,10 +66,14 @@ const uploadEl = document.querySelector<HTMLDivElement>('#upload')!;
 const toolbar = document.querySelector<HTMLDivElement>('#toolbar')!;
 const undoBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=undo]')!;
 const redoBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=redo]')!;
+const downloadBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=download]')!;
+const formatInputs = toolbar.querySelectorAll<HTMLInputElement>('input[name=format]');
 
 let renderer: CanvasRenderer | null = null;
 let rectTool: RectTool | null = null;
 let history: History<readonly Rect[]> | null = null;
+let originalName: string | undefined;
+let currentFormat: Format = 'png';
 
 const updateToolbar = (): void => {
   undoBtn.disabled = !history?.canUndo();
@@ -82,6 +101,25 @@ const redo = (): void => {
 undoBtn.addEventListener('click', undo);
 redoBtn.addEventListener('click', redo);
 
+formatInputs.forEach((input) => {
+  input.addEventListener('change', () => {
+    if (input.checked) currentFormat = input.value as Format;
+  });
+});
+
+downloadBtn.addEventListener('click', () => {
+  if (!renderer) return;
+  const { mime, quality } = formatToMime(currentFormat);
+  void renderer
+    .getBlob(mime, quality)
+    .then((blob) => {
+      downloadBlob(blob, buildFilename(originalName, currentFormat));
+    })
+    .catch((err: unknown) => {
+      console.error('Download failed:', err);
+    });
+});
+
 window.addEventListener('keydown', (e) => {
   if (!e.metaKey && !e.ctrlKey) return;
   if (e.code === 'KeyZ' && !e.shiftKey) {
@@ -94,6 +132,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 setupUpload(uploadEl, (file) => {
+  originalName = file.name;
   renderer = createCanvasRenderer(uploadEl);
   void renderer
     .load(file)
@@ -101,9 +140,8 @@ setupUpload(uploadEl, (file) => {
       const canvas = renderer?.getCanvas();
       if (!canvas) return;
 
-      // Fresh history per upload — satisfies "loading a new image clears the stack".
       history = createHistory<readonly Rect[]>(100);
-      history.push([]); // initial floor
+      history.push([]);
 
       rectTool = setupRectTool(
         canvas,
