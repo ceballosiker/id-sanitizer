@@ -13,7 +13,17 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          // Skip the GPU and the software-rasterizer fallback. Both are
+          // required: in nested-virt environments (Docker/WSL2) Chromium
+          // falls through to the software rasterizer, which deadlocks on
+          // shared-memory primitives across the env boundaries — hangs
+          // page.screenshot() and canvas paints. Benign on real CI runners.
+          args: ['--disable-gpu', '--disable-software-rasterizer'],
+        },
+      },
     },
   ],
   webServer: {
