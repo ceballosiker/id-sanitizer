@@ -1,0 +1,62 @@
+name: Close referenced issues on develop merges
+
+# GitHub's built-in `Closes #N` only auto-fires when a PR merges into the
+# default branch (main). Day-to-day work merges into `develop`, so we
+# replicate the behaviour here for develop.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [develop]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  close-referenced:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+            // Match GitHub's official close keywords: close, closes, closed,
+            // fix, fixes, fixed, resolve, resolves, resolved (case-insensitive).
+            const re = /\b(?:close[sd]?|fix(?:es|ed)?|resolve[sd]?)\s+#(\d+)\b/gi;
+            const seen = new Set();
+            const numbers = [];
+            for (const m of body.matchAll(re)) {
+              const n = Number(m[1]);
+              if (!seen.has(n)) {
+                seen.add(n);
+                numbers.push(n);
+              }
+            }
+            if (numbers.length === 0) {
+              core.info('No close keywords in PR body — nothing to do.');
+              return;
+            }
+            core.info(`Closing referenced issues: ${numbers.join(', ')}`);
+            for (const issue_number of numbers) {
+              try {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number,
+                  body: `Closed by #${pr.number}.`,
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number,
+                  state: 'closed',
+                  state_reason: 'completed',
+                });
+                core.info(`Closed #${issue_number}`);
+              } catch (err) {
+                core.warning(`Failed to close #${issue_number}: ${err.message}`);
+              }
+            }
