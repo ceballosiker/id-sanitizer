@@ -226,3 +226,18 @@ test('about modal shows the app version', async ({ page }) => {
   await page.locator('[data-action=about]').click({ force: true });
   await expect(page.locator('.about-version')).toContainText(/v\d+\.\d+\.\d+/);
 });
+
+test('page.screenshot() returns a PNG without deadlocking', async ({ page }) => {
+  // Regression test for the headless paint pipeline. Without
+  // --disable-gpu + --disable-software-rasterizer in launchOptions,
+  // page.screenshot() deadlocks in nested-virt envs (Docker/WSL2).
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  const buf = await page.screenshot({ type: 'png', fullPage: true });
+  expect(buf.length).toBeGreaterThan(1000);
+  // PNG magic bytes: 89 50 4E 47
+  expect(buf[0]).toBe(0x89);
+  expect(buf[1]).toBe(0x50);
+  expect(buf[2]).toBe(0x4e);
+  expect(buf[3]).toBe(0x47);
+});
