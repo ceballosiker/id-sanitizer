@@ -271,6 +271,48 @@ main p {
   cursor: crosshair;
 }
 
+.toolbar {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.toolbar[hidden] {
+  display: none;
+}
+
+.toolbar button {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  padding: 0.5rem 0.875rem;
+  cursor: pointer;
+  transition:
+    background 80ms ease,
+    color 80ms ease;
+}
+
+.toolbar button:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--page);
+}
+
+.toolbar button:focus-visible {
+  outline: 2px solid var(--stamp);
+  outline-offset: 2px;
+}
+
+.toolbar button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ───── Footer ─────
    Dashed perforation line, mono link captions, redaction-bar
    hover that "redacts" the link text. */
