@@ -35,13 +35,20 @@ const rectToOverlay = (r: Rect): Overlay => ({
   },
 });
 
+export interface RectTool {
+  getRects(): readonly Rect[];
+  setRects(rects: readonly Rect[]): void;
+  isDragging(): boolean;
+}
+
 export function setupRectTool(
   canvas: HTMLCanvasElement,
   onOverlaysChanged: (overlays: readonly Overlay[]) => void,
-): void {
+  onCommit: (rects: readonly Rect[]) => void,
+): RectTool {
   let dragStart: { x: number; y: number } | null = null;
   let draft: Rect | null = null;
-  const committed: Rect[] = [];
+  let committed: Rect[] = [];
 
   const emit = (): void => {
     const all: readonly Rect[] = draft ? [...committed, draft] : committed;
@@ -70,6 +77,7 @@ export function setupRectTool(
   const finishDrag = (): void => {
     if (draft && draft.w > 0 && draft.h > 0) {
       committed.push(draft);
+      onCommit([...committed]);
     }
     dragStart = null;
     draft = null;
@@ -82,4 +90,17 @@ export function setupRectTool(
   });
 
   canvas.addEventListener('pointercancel', finishDrag);
+
+  return {
+    getRects(): readonly Rect[] {
+      return [...committed];
+    },
+    setRects(next: readonly Rect[]): void {
+      committed = [...next];
+      emit();
+    },
+    isDragging(): boolean {
+      return dragStart !== null;
+    },
+  };
 }
