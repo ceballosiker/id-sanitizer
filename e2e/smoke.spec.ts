@@ -98,3 +98,21 @@ test('canvas preview matches the uploaded image dimensions', async ({ page }) =>
   await expect(preview).toHaveJSProperty('width', 1);
   await expect(preview).toHaveJSProperty('height', 1);
 });
+
+test('toolbar is hidden before upload', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#toolbar')).toBeHidden();
+});
+
+test('toolbar appears with both buttons disabled after upload', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type=file]', {
+    name: 'sample.png',
+    mimeType: 'image/png',
+    buffer: tinyPngBuffer,
+  });
+  const toolbar = page.locator('#toolbar');
+  await expect(toolbar).toBeVisible();
+  await expect(toolbar.locator('[data-action=undo]')).toBeDisabled();
+  await expect(toolbar.locator('[data-action=redo]')).toBeDisabled();
+});
