@@ -116,3 +116,38 @@ test('toolbar appears with both buttons disabled after upload', async ({ page })
   await expect(toolbar.locator('[data-action=undo]')).toBeDisabled();
   await expect(toolbar.locator('[data-action=redo]')).toBeDisabled();
 });
+
+test('download exports a PNG with sanitized filename', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type=file]', {
+    name: 'passport.png',
+    mimeType: 'image/png',
+    buffer: tinyPngBuffer,
+  });
+  await expect(page.locator('#toolbar')).toBeVisible();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('[data-action=download]').click();
+  const download = await downloadPromise;
+
+  expect(download.suggestedFilename()).toBe('passport-sanitized.png');
+});
+
+test('download exports a JPEG when format toggle is set to JPEG', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type=file]', {
+    name: 'passport.png',
+    mimeType: 'image/png',
+    buffer: tinyPngBuffer,
+  });
+  await expect(page.locator('#toolbar')).toBeVisible();
+
+  // The radio input is visually hidden via clip-rect; click the label as a real user would.
+  await page.locator('label:has(input[value=jpeg])').click();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('[data-action=download]').click();
+  const download = await downloadPromise;
+
+  expect(download.suggestedFilename()).toBe('passport-sanitized.jpg');
+});
