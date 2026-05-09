@@ -62,7 +62,26 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <a href="https://github.com/ceballosiker/id-sanitizer">Source</a>
   <span aria-hidden="true">·</span>
   <a href="https://github.com/ceballosiker/id-sanitizer/blob/main/LICENSE">License</a>
+  <span aria-hidden="true">·</span>
+  <button type="button" data-action="about">About</button>
 </footer>
+<dialog id="about-dialog" class="about-dialog" aria-labelledby="about-title">
+  <button type="button" class="about-close" aria-label="Close">×</button>
+  <h2 id="about-title">ID Sanitizer</h2>
+  <p class="about-version">v<span data-version></span></p>
+  <p>
+    Redact personal info from photos of IDs — locally, in your browser,
+    with no upload. Nothing leaves your device.
+  </p>
+  <p>
+    <a href="https://github.com/ceballosiker/id-sanitizer">Source on GitHub</a>
+  </p>
+  <p class="about-license">
+    Licensed under the
+    <a href="https://github.com/ceballosiker/id-sanitizer/blob/main/LICENSE">MIT License</a>.
+    © 2026 Iker.
+  </p>
+</dialog>
 `;
 
 const uploadEl = document.querySelector<HTMLDivElement>('#upload')!;
@@ -71,6 +90,10 @@ const undoBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=undo]')!;
 const redoBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=redo]')!;
 const downloadBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=download]')!;
 const formatInputs = toolbar.querySelectorAll<HTMLInputElement>('input[name=format]');
+const aboutBtn = document.querySelector<HTMLButtonElement>('[data-action=about]')!;
+const aboutDialog = document.querySelector<HTMLDialogElement>('#about-dialog')!;
+const aboutClose = aboutDialog.querySelector<HTMLButtonElement>('.about-close')!;
+const versionEl = aboutDialog.querySelector<HTMLSpanElement>('[data-version]')!;
 
 let renderer: CanvasRenderer | null = null;
 let rectTool: RectTool | null = null;
@@ -103,6 +126,17 @@ const redo = (): void => {
 
 undoBtn.addEventListener('click', undo);
 redoBtn.addEventListener('click', redo);
+
+versionEl.textContent = __APP_VERSION__;
+
+aboutBtn.addEventListener('click', () => aboutDialog.showModal());
+aboutClose.addEventListener('click', () => aboutDialog.close());
+
+// Light-dismiss: click on the backdrop (which surfaces as a click on the
+// dialog itself when the click is outside the dialog's content box) closes it.
+aboutDialog.addEventListener('click', (e) => {
+  if (e.target === aboutDialog) aboutDialog.close();
+});
 
 formatInputs.forEach((input) => {
   input.addEventListener('change', () => {
