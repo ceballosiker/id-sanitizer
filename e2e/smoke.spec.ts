@@ -203,3 +203,26 @@ test('page still loads when offline after first online visit', async ({ page, co
   await expect(page.getByRole('banner')).toContainText(/works offline/i);
   await expect(page.getByRole('main')).toBeVisible();
 });
+
+test('about modal opens from the footer button', async ({ page }) => {
+  await page.goto('/');
+  const about = page.locator('#about-dialog');
+  await expect(about).toBeHidden();
+  await page.locator('[data-action=about]').click({ force: true });
+  await expect(about).toBeVisible();
+});
+
+test('about modal closes via Esc', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-action=about]').click({ force: true });
+  const about = page.locator('#about-dialog');
+  await expect(about).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(about).toBeHidden();
+});
+
+test('about modal shows the app version', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-action=about]').click({ force: true });
+  await expect(page.locator('.about-version')).toContainText(/v\d+\.\d+\.\d+/);
+});

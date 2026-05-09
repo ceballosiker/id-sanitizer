@@ -1,7 +1,12 @@
 /// <reference types="vitest" />
+import { readFileSync } from 'node:fs';
 import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { configDefaults } from 'vitest/config';
+
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8')) as {
+  version: string;
+};
 
 const csp = [
   // Block everything by default; each directive below is an explicit allow.
@@ -78,6 +83,9 @@ export default defineConfig(({ mode }) => ({
       },
     }),
   ],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   test: {
     environment: 'happy-dom',
     exclude: [...configDefaults.exclude, 'e2e/**'],
