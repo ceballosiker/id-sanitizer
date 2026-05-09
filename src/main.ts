@@ -6,6 +6,9 @@ import { createCanvasRenderer, type CanvasRenderer } from './canvas';
 import { setupRectTool, type Rect, type RectTool } from './rect-tool';
 import { createHistory, type History } from './history';
 import { buildFilename, downloadBlob, formatToMime, type Format } from './download';
+import { registerSW } from 'virtual:pwa-register';
+
+registerSW({ immediate: true });
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <header>
