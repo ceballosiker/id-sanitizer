@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { makeSolidPng, tinyPngBuffer } from './fixtures';
+import { tinyPngBuffer } from './fixtures';
 
 test('app loads with the expected title', async ({ page }) => {
   await page.goto('/');
