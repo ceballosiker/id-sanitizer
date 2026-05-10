@@ -15,7 +15,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "screenshot": "npm run build && node scripts/screenshot.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
