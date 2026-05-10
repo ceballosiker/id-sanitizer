@@ -95,6 +95,7 @@ npm run dev
 | `npm run test:run`                | Vitest unit tests                                    |
 | `npm run e2e`                     | Playwright e2e tests against the production build    |
 | `npm run icons`                   | Regenerate PWA icons from `scripts/icon.svg`         |
+| `npm run screenshot`              | Recapture `docs/hero.png` from the production build  |
 
 After clone + `npm install`, the app runs fully offline — no CDN, no
 remote fonts, no analytics. The bundled fonts (Fraunces, JetBrains Mono)

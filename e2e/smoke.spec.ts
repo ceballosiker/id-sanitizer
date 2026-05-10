@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { makeSolidPng, tinyPngBuffer } from './fixtures';
 
 test('app loads with the expected title', async ({ page }) => {
   await page.goto('/');
@@ -20,12 +21,6 @@ test('app shell renders semantic landmarks and offline badge', async ({ page }) 
   );
   await expect(footer.getByRole('link', { name: 'License' })).toHaveAttribute('href', /\/LICENSE$/);
 });
-
-// 1×1 transparent PNG, smallest valid PNG (67 bytes after base64 decode).
-const tinyPngBuffer = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
-  'base64',
-);
 
 test('upload via file picker shows preview and removes the dropzone', async ({ page }) => {
   await page.goto('/');
@@ -127,10 +122,7 @@ test('download exports a PNG with sanitized filename', async ({ page }) => {
   await expect(page.locator('#toolbar')).toBeVisible();
 
   const downloadPromise = page.waitForEvent('download');
-  // force: true sidesteps a flaky Playwright actionability check on this button
-  // in our headless environment — the button is fully interactive (verified via
-  // elementsFromPoint stack inspection), but Playwright sometimes won't auto-resolve.
-  await page.locator('[data-action=download]').click({ force: true });
+  await page.locator('[data-action=download]').click();
   const download = await downloadPromise;
 
   expect(download.suggestedFilename()).toBe('passport-sanitized.png');
@@ -145,15 +137,10 @@ test('download exports a JPEG when format toggle is set to JPEG', async ({ page 
   });
   await expect(page.locator('#toolbar')).toBeVisible();
 
-  // The radio input is visually hidden via clip-rect; click the label as a real user would.
-  // force: true matches the download button below — same flaky actionability behaviour.
-  await page.locator('label:has(input[value=jpeg])').click({ force: true });
+  await page.locator('label:has(input[value=jpeg])').click();
 
   const downloadPromise = page.waitForEvent('download');
-  // force: true sidesteps a flaky Playwright actionability check on this button
-  // in our headless environment — the button is fully interactive (verified via
-  // elementsFromPoint stack inspection), but Playwright sometimes won't auto-resolve.
-  await page.locator('[data-action=download]').click({ force: true });
+  await page.locator('[data-action=download]').click();
   const download = await downloadPromise;
 
   expect(download.suggestedFilename()).toBe('passport-sanitized.jpg');
@@ -208,13 +195,13 @@ test('about modal opens from the footer button', async ({ page }) => {
   await page.goto('/');
   const about = page.locator('#about-dialog');
   await expect(about).toBeHidden();
-  await page.locator('[data-action=about]').click({ force: true });
+  await page.locator('[data-action=about]').click();
   await expect(about).toBeVisible();
 });
 
 test('about modal closes via Esc', async ({ page }) => {
   await page.goto('/');
-  await page.locator('[data-action=about]').click({ force: true });
+  await page.locator('[data-action=about]').click();
   const about = page.locator('#about-dialog');
   await expect(about).toBeVisible();
   await page.keyboard.press('Escape');
@@ -223,7 +210,7 @@ test('about modal closes via Esc', async ({ page }) => {
 
 test('about modal shows the app version', async ({ page }) => {
   await page.goto('/');
-  await page.locator('[data-action=about]').click({ force: true });
+  await page.locator('[data-action=about]').click();
   await expect(page.locator('.about-version')).toContainText(/v\d+\.\d+\.\d+/);
 });
 
