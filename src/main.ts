@@ -41,6 +41,15 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     >
       Redo
     </button>
+    <button
+      type="button"
+      data-action="grayscale"
+      aria-pressed="false"
+      title="Toggle grayscale"
+      disabled
+    >
+      Grayscale
+    </button>
     <div class="toolbar-export">
       <fieldset class="format-toggle">
         <legend class="visually-hidden">Format</legend>
@@ -88,6 +97,7 @@ const uploadEl = document.querySelector<HTMLDivElement>('#upload')!;
 const toolbar = document.querySelector<HTMLDivElement>('#toolbar')!;
 const undoBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=undo]')!;
 const redoBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=redo]')!;
+const grayscaleBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=grayscale]')!;
 const downloadBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=download]')!;
 const formatInputs = toolbar.querySelectorAll<HTMLInputElement>('input[name=format]');
 const aboutBtn = document.querySelector<HTMLButtonElement>('[data-action=about]')!;
@@ -126,6 +136,12 @@ const redo = (): void => {
 
 undoBtn.addEventListener('click', undo);
 redoBtn.addEventListener('click', redo);
+grayscaleBtn.addEventListener('click', () => {
+  if (!renderer) return;
+  const next = grayscaleBtn.getAttribute('aria-pressed') !== 'true';
+  grayscaleBtn.setAttribute('aria-pressed', String(next));
+  renderer.setGrayscale(next);
+});
 
 versionEl.textContent = __APP_VERSION__;
 
@@ -190,6 +206,8 @@ setupUpload(uploadEl, (file) => {
       );
 
       toolbar.hidden = false;
+      grayscaleBtn.disabled = false;
+      grayscaleBtn.setAttribute('aria-pressed', 'false');
       updateToolbar();
     })
     .catch((err: unknown) => {
