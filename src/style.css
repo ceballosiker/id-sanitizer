@@ -264,6 +264,7 @@ main p {
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.5rem;
 }
@@ -307,6 +308,60 @@ main p {
 .toolbar button[aria-pressed='true'] {
   background: var(--ink);
   color: var(--page);
+}
+
+.toolbar-watermark {
+  /* flex-basis: 100% forces a wrap so this row sits below the button row,
+     instead of competing with the buttons inside the parent flex line. */
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0;
+  flex-wrap: wrap;
+}
+
+.toolbar-watermark label {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+}
+
+.toolbar-watermark input[type='text'] {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  padding: 0.4rem 0.6rem;
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.toolbar-watermark input[type='text']:focus-visible {
+  outline: 2px solid var(--stamp);
+  outline-offset: 2px;
+}
+
+.toolbar-watermark input[type='range'] {
+  accent-color: var(--ink);
+  flex: 0 0 8rem;
+}
+
+.toolbar-watermark output {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--ink);
+  min-width: 3ch;
+}
+
+.toolbar-watermark input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ───── Footer ─────

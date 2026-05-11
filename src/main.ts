@@ -64,6 +64,29 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </fieldset>
       <button type="button" data-action="download">Download</button>
     </div>
+    <div class="toolbar-watermark">
+      <label for="watermark-text">Watermark</label>
+      <input
+        type="text"
+        id="watermark-text"
+        data-action="watermark-text"
+        placeholder="For [purpose] · YYYY-MM-DD"
+        maxlength="80"
+        disabled
+      />
+      <label for="watermark-opacity">Opacity</label>
+      <input
+        type="range"
+        id="watermark-opacity"
+        data-action="watermark-opacity"
+        min="0"
+        max="100"
+        step="1"
+        value="30"
+        disabled
+      />
+      <output for="watermark-opacity" data-action="watermark-opacity-value">30%</output>
+    </div>
   </div>
   <div id="upload"></div>
 </main>
@@ -98,6 +121,13 @@ const toolbar = document.querySelector<HTMLDivElement>('#toolbar')!;
 const undoBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=undo]')!;
 const redoBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=redo]')!;
 const grayscaleBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=grayscale]')!;
+const watermarkText = toolbar.querySelector<HTMLInputElement>('[data-action=watermark-text]')!;
+const watermarkOpacity = toolbar.querySelector<HTMLInputElement>(
+  '[data-action=watermark-opacity]',
+)!;
+const watermarkOpacityValue = toolbar.querySelector<HTMLOutputElement>(
+  '[data-action=watermark-opacity-value]',
+)!;
 const downloadBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=download]')!;
 const formatInputs = toolbar.querySelectorAll<HTMLInputElement>('input[name=format]');
 const aboutBtn = document.querySelector<HTMLButtonElement>('[data-action=about]')!;
@@ -142,6 +172,15 @@ grayscaleBtn.addEventListener('click', () => {
   grayscaleBtn.setAttribute('aria-pressed', String(next));
   renderer.setGrayscale(next);
 });
+
+const updateWatermark = (): void => {
+  if (!renderer) return;
+  const pct = Number(watermarkOpacity.value);
+  watermarkOpacityValue.textContent = `${pct}%`;
+  renderer.setWatermark(watermarkText.value, pct / 100);
+};
+watermarkText.addEventListener('input', updateWatermark);
+watermarkOpacity.addEventListener('input', updateWatermark);
 
 versionEl.textContent = __APP_VERSION__;
 
@@ -207,6 +246,8 @@ setupUpload(uploadEl, (file) => {
 
       toolbar.hidden = false;
       grayscaleBtn.disabled = false;
+      watermarkText.disabled = false;
+      watermarkOpacity.disabled = false;
       updateToolbar();
     })
     .catch((err: unknown) => {
