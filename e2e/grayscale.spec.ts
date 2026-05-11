@@ -145,4 +145,3 @@ test('downloaded PNG bakes grayscale and the redaction rect', async ({ page }) =
   expect(samples.outside[1]).toBe(76);
   expect(samples.outside[2]).toBe(76);
 });
-
