@@ -1,4 +1,5 @@
 import { toGrayscale } from './grayscale';
+import { tilePositions } from './watermark';
 
 export type Overlay = {
   draw(ctx: CanvasRenderingContext2D): void;
@@ -8,10 +9,22 @@ export interface CanvasRenderer {
   load(file: File): Promise<void>;
   setOverlays(overlays: readonly Overlay[]): void;
   setGrayscale(on: boolean): void;
+  setWatermark(text: string, opacity: number): void;
   redraw(): void;
   getBlob(mime: string, quality?: number): Promise<Blob>;
   getCanvas(): HTMLCanvasElement | null;
 }
+
+const WATERMARK_ROTATION_RAD = (30 * Math.PI) / 180;
+const WATERMARK_X_SPACING = 1.6;
+const WATERMARK_Y_SPACING = 2.5;
+const WATERMARK_LINE_HEIGHT_MULTIPLIER = 1.2;
+const WATERMARK_SIZE_DIVISOR = 28;
+// Hardcoded mono stack rather than reading var(--mono) at draw time: ctx.font
+// is parsed as a CSS font shorthand that doesn't resolve CSS custom properties,
+// and getComputedStyle round-trips are slower than a constant string.
+const WATERMARK_FONT_STACK =
+  '"JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
 
 function loadImageElement(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -34,8 +47,39 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
   let ctx: CanvasRenderingContext2D | null = null;
   let overlays: readonly Overlay[] = [];
   let grayscale = false;
-  // Lazily computed on the first redraw after grayscale flips on; cleared on load().
   let cachedGrayscale: ImageData | null = null;
+  let watermarkText = '';
+  let watermarkOpacity = 0.3;
+
+  const drawWatermark = (): void => {
+    if (!ctx || !canvas || watermarkText === '') return;
+    const size = Math.floor(Math.min(canvas.width, canvas.height) / WATERMARK_SIZE_DIVISOR);
+    if (size <= 0) return;
+    ctx.save();
+    ctx.font = `${size}px ${WATERMARK_FONT_STACK}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = `rgba(0, 0, 0, ${watermarkOpacity})`;
+    const textWidth = ctx.measureText(watermarkText).width;
+    const lineHeight = size * WATERMARK_LINE_HEIGHT_MULTIPLIER;
+    const tiles = tilePositions({
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+      textWidth,
+      lineHeight,
+      rotationRad: WATERMARK_ROTATION_RAD,
+      xSpacing: WATERMARK_X_SPACING,
+      ySpacing: WATERMARK_Y_SPACING,
+    });
+    for (const tile of tiles) {
+      ctx.save();
+      ctx.translate(tile.x, tile.y);
+      ctx.rotate(WATERMARK_ROTATION_RAD);
+      ctx.fillText(watermarkText, 0, 0);
+      ctx.restore();
+    }
+    ctx.restore();
+  };
 
   const redraw = (): void => {
     if (!ctx || !canvas || !source) return;
@@ -51,6 +95,7 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
     } else {
       ctx.drawImage(source, 0, 0);
     }
+    drawWatermark();
     for (const overlay of overlays) overlay.draw(ctx);
   };
 
@@ -69,6 +114,8 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
       overlays = [];
       grayscale = false;
       cachedGrayscale = null;
+      watermarkText = '';
+      watermarkOpacity = 0.3;
       container.replaceChildren(c);
       // Fire-and-forget the initial paint via rAF. load() resolves immediately
       // so consumers can wire up listeners; the rAF callback paints the base
@@ -86,6 +133,12 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
 
     setGrayscale(on: boolean): void {
       grayscale = on;
+      redraw();
+    },
+
+    setWatermark(text: string, opacity: number): void {
+      watermarkText = text;
+      watermarkOpacity = opacity;
       redraw();
     },
 
