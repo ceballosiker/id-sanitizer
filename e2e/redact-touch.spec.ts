@@ -32,6 +32,13 @@ async function touchDragOnCanvas(
   from: [number, number],
   to: [number, number],
 ): Promise<void> {
+  // Scroll the canvas into view first: as the toolbar grows with new controls
+  // (#39 grayscale, #45 watermark, …), the canvas drifts down the page and on
+  // a tight mobile viewport its bottom can sit below the visible area. CDP
+  // touch events dispatched to viewport coords outside the visible region
+  // never reach the canvas — which would look like a regression of #37 even
+  // though the touch-action fix is intact.
+  await canvas.scrollIntoViewIfNeeded();
   const coords = await canvas.evaluate(
     (el, [fx, fy, tx, ty]) => {
       const c = el as HTMLCanvasElement;
