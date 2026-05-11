@@ -1,3 +1,5 @@
+import { toGrayscale } from './grayscale';
+
 export type Overlay = {
   draw(ctx: CanvasRenderingContext2D): void;
 };
@@ -5,6 +7,7 @@ export type Overlay = {
 export interface CanvasRenderer {
   load(file: File): Promise<void>;
   setOverlays(overlays: readonly Overlay[]): void;
+  setGrayscale(on: boolean): void;
   redraw(): void;
   getBlob(mime: string, quality?: number): Promise<Blob>;
   getCanvas(): HTMLCanvasElement | null;
@@ -30,11 +33,24 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
   let canvas: HTMLCanvasElement | null = null;
   let ctx: CanvasRenderingContext2D | null = null;
   let overlays: readonly Overlay[] = [];
+  let grayscale = false;
+  // Lazily computed on the first redraw after grayscale flips on; cleared on load().
+  let cachedGrayscale: ImageData | null = null;
 
   const redraw = (): void => {
     if (!ctx || !canvas || !source) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(source, 0, 0);
+    if (grayscale) {
+      if (!cachedGrayscale) {
+        ctx.drawImage(source, 0, 0);
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        data.data.set(toGrayscale(data.data));
+        cachedGrayscale = data;
+      }
+      ctx.putImageData(cachedGrayscale, 0, 0);
+    } else {
+      ctx.drawImage(source, 0, 0);
+    }
     for (const overlay of overlays) overlay.draw(ctx);
   };
 
@@ -50,6 +66,9 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
       source = img;
       canvas = c;
       ctx = got;
+      overlays = [];
+      grayscale = false;
+      cachedGrayscale = null;
       container.replaceChildren(c);
       // Fire-and-forget the initial paint via rAF. load() resolves immediately
       // so consumers can wire up listeners; the rAF callback paints the base
@@ -62,6 +81,11 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
 
     setOverlays(next: readonly Overlay[]): void {
       overlays = next;
+      redraw();
+    },
+
+    setGrayscale(on: boolean): void {
+      grayscale = on;
       redraw();
     },
 
