@@ -207,7 +207,6 @@ setupUpload(uploadEl, (file) => {
 
       toolbar.hidden = false;
       grayscaleBtn.disabled = false;
-      grayscaleBtn.setAttribute('aria-pressed', 'false');
       updateToolbar();
     })
     .catch((err: unknown) => {
