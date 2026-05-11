@@ -269,6 +269,8 @@ main p {
   border: 1px solid var(--ink);
   margin-top: 0.5rem;
   cursor: crosshair;
+  /* Suppress pan/zoom gestures so touch drags deliver pointer events instead of pointercancel. */
+  touch-action: none;
 }
 
 .toolbar {
