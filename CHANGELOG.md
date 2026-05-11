@@ -5,6 +5,20 @@ All notable changes to ID Sanitizer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-05-11
+
+### Added
+
+- **Grayscale toggle** in the toolbar — converts the loaded image to grayscale before redaction rectangles are composited, and bakes the conversion into the downloaded PNG/JPEG. Useful for IDs (passports, licenses) where only information needs to be preserved, not the color photo. Uses Rec. 601 luma weights (matches CSS `filter: grayscale(1)`). Toggle state is independent of the rect-history stack so undo/redo never flips it.
+
+### Fixed
+
+- Redaction-rectangle drag on mobile / touch devices. Previously the black rect appeared at the tap point but did not follow the finger; lifting committed a tiny rectangle. The canvas now opts out of browser touch gestures so pointer events deliver end-to-end.
+
+### Changed
+
+- Dropped the segmented "stencil bar" decoration above the page title in favour of a cleaner header. The bottom border-rule still separates header from content.
+
 ## [0.1.0] - 2026-05-09
 
 Initial release.
@@ -21,4 +35,5 @@ Initial release.
 - Self-hosted fonts (Fraunces, JetBrains Mono) via Fontsource — no CDN, no remote requests.
 - GitHub Pages deploy workflow on push to `main`.
 
+[0.2.0]: https://github.com/ceballosiker/id-sanitizer/releases/tag/v0.2.0
 [0.1.0]: https://github.com/ceballosiker/id-sanitizer/releases/tag/v0.1.0
