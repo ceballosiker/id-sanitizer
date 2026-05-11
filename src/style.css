@@ -304,6 +304,11 @@ main p {
   cursor: not-allowed;
 }
 
+.toolbar button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--page);
+}
+
 /* ───── Footer ─────
    Dashed perforation line, mono link captions, redaction-bar
    hover that "redacts" the link text. */
