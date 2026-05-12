@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Cream background extends to all edges so launcher masks reveal background, never clipped content -->
+  <rect width="512" height="512" fill="#f3ede1"/>
+  <!-- All content below sits inside the central 80% safe zone (x=51..461, y=51..461) -->
+  <!-- Letter I: vertical bar -->
+  <rect x="168" y="140" width="48" height="232" fill="#1a1612"/>
+  <!-- Letter D: vertical bar + right-side semicircle (radius 116) -->
+  <rect x="246" y="140" width="48" height="232" fill="#1a1612"/>
+  <path d="M 294 140 a 116 116 0 0 1 0 232 z" fill="#1a1612"/>
+  <!-- Redaction bar: terminates AT the safe-zone edges so circular masks don't clip mid-stroke -->
+  <rect x="51" y="232" width="410" height="48" fill="#000000"/>
+</svg>

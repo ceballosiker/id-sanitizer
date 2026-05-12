@@ -1,8 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#1a1612"/>
-  <!-- Letter I (vertical bar) -->
-  <rect x="146" y="140" width="60" height="232" fill="#ece5d5"/>
-  <!-- Letter D (vertical bar + semicircle) -->
-  <rect x="246" y="140" width="60" height="232" fill="#ece5d5"/>
-  <path d="M 306 140 a 116 116 0 0 1 0 232 z" fill="#ece5d5"/>
+  <!-- Cream "paper" background -->
+  <rect width="512" height="512" fill="#f3ede1"/>
+  <!-- Letter I: vertical bar -->
+  <rect x="146" y="120" width="60" height="272" fill="#1a1612"/>
+  <!-- Letter D: vertical bar + right-side semicircle (radius 136) -->
+  <rect x="246" y="120" width="60" height="272" fill="#1a1612"/>
+  <path d="M 306 120 a 136 136 0 0 1 0 272 z" fill="#1a1612"/>
+  <!-- Redaction bar: pure black, full canvas width, centred on the letters' midline (y=256) -->
+  <rect x="0" y="226" width="512" height="60" fill="#000000"/>
 </svg>
