@@ -4,7 +4,12 @@ export interface TileGridParams {
   textWidth: number;
   lineHeight: number;
   rotationRad: number;
-  xSpacing: number;
+  // Gap between adjacent text instances along the rotation axis, in units of
+  // lineHeight. Asymmetric with ySpacing on purpose: text has variable width,
+  // so the X step is `textWidth + lineHeight × xGapMultiplier` — the gap stays
+  // constant regardless of how long the string is. (Y has constant line height,
+  // so ySpacing can be a plain multiplier-of-step.)
+  xGapMultiplier: number;
   ySpacing: number;
 }
 
@@ -15,17 +20,25 @@ export interface Tile {
 
 // Generate tile anchor points so a rotated text grid fully covers the canvas.
 // Tiles are laid out in a rotated (u, v) coordinate system with steps
-// `xSpacing × textWidth` along the rotation axis and `ySpacing × lineHeight`
-// perpendicular to it, then transformed back to canvas (x, y). The renderer
-// rotates by `rotationRad` around each anchor at draw time.
+// `textWidth + lineHeight × xGapMultiplier` along the rotation axis and
+// `lineHeight × ySpacing` perpendicular to it, then transformed back to
+// canvas (x, y). The renderer rotates by `rotationRad` around each anchor at
+// draw time.
 export function tilePositions(params: TileGridParams): Tile[] {
-  const { canvasWidth, canvasHeight, textWidth, lineHeight, rotationRad, xSpacing, ySpacing } =
-    params;
+  const {
+    canvasWidth,
+    canvasHeight,
+    textWidth,
+    lineHeight,
+    rotationRad,
+    xGapMultiplier,
+    ySpacing,
+  } = params;
   if (canvasWidth <= 0 || canvasHeight <= 0 || textWidth <= 0 || lineHeight <= 0) {
     return [];
   }
 
-  const stepU = textWidth * xSpacing;
+  const stepU = textWidth + lineHeight * xGapMultiplier;
   const stepV = lineHeight * ySpacing;
   const cosT = Math.cos(rotationRad);
   const sinT = Math.sin(rotationRad);

@@ -202,3 +202,49 @@ test('downloaded PNG bakes the watermark and the redaction rect', async ({ page 
   expect(samples.inside[2]).toBeLessThan(5);
   expect(samples.outsideHits).toBeGreaterThan(20);
 });
+
+test('long watermark text tiles without a diagonal unwatermarked band (#54)', async ({ page }) => {
+  const canvas = await uploadLargeRedImage(page);
+  // 55-character watermark — the kind of "For BankName Verification YYYY-MM-DD"
+  // string that exposed the spacing bug in production. Before the fix, the
+  // tile step grew with textWidth, producing a 300+ px continuous source-color
+  // band along the rotation axis.
+  await page
+    .locator('[data-action=watermark-text]')
+    .fill('ACME Bank Confidential Verification 2026-05-12 ABCDEF');
+
+  // Scan multiple horizontal stripes — a diagonal bug-band would always
+  // intersect at least one stripe near the middle of the canvas.
+  const result = await canvas.evaluate((el) => {
+    const c = el as HTMLCanvasElement;
+    const ctx = c.getContext('2d');
+    if (!ctx) throw new Error('no 2d context');
+    const isSourceRed = (i: number, row: Uint8ClampedArray): boolean =>
+      Math.abs(row[i] - 255) < 4 && row[i + 1] < 4 && row[i + 2] < 4;
+
+    let worstRun = 0;
+    for (const stripeY of [
+      Math.floor(c.height * 0.4),
+      Math.floor(c.height * 0.5),
+      Math.floor(c.height * 0.6),
+    ]) {
+      const row = ctx.getImageData(0, stripeY, c.width, 1).data;
+      let current = 0;
+      for (let i = 0; i < row.length; i += 4) {
+        if (isSourceRed(i, row)) {
+          current++;
+          if (current > worstRun) worstRun = current;
+        } else {
+          current = 0;
+        }
+      }
+    }
+    return { worstRun, canvasWidth: c.width };
+  });
+
+  // Before the fix the worst run on a 400-wide canvas was ~150-300 px
+  // (a diagonal band wider than the text gap). After the fix the gap is
+  // a constant ~25-30 px regardless of text length, so the longest run of
+  // unwatermarked source pixels stays well under a quarter of the canvas.
+  expect(result.worstRun).toBeLessThan(result.canvasWidth / 4);
+});
