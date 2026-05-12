@@ -7,7 +7,7 @@ const baseParams = (overrides: Partial<TileGridParams> = {}): TileGridParams => 
   textWidth: 40,
   lineHeight: 16,
   rotationRad: 0,
-  xSpacing: 1.6,
+  xGapMultiplier: 1.5,
   ySpacing: 2.5,
   ...overrides,
 });
@@ -70,7 +70,10 @@ test('30° rotation: rotating a tile center back puts it on the rotated-space gr
 test('every canvas pixel is within max-step distance of at least one tile', () => {
   const params = baseParams({ rotationRad: (30 * Math.PI) / 180 });
   const tiles = tilePositions(params);
-  const maxStep = Math.max(params.textWidth * params.xSpacing, params.lineHeight * params.ySpacing);
+  const maxStep = Math.max(
+    params.textWidth + params.lineHeight * params.xGapMultiplier,
+    params.lineHeight * params.ySpacing,
+  );
   const samples: Array<[number, number]> = [
     [0, 0],
     [params.canvasWidth - 1, 0],
@@ -102,4 +105,22 @@ test('zero line height yields no tiles', () => {
 
 test('negative dimensions yield no tiles', () => {
   expect(tilePositions(baseParams({ canvasWidth: -10 }))).toEqual([]);
+});
+
+test('x-step does NOT scale with textWidth (regression #54)', () => {
+  // The old `stepU = textWidth × xSpacing` math meant doubling the text width
+  // also doubled the step (and the empty gap between text instances), producing
+  // a giant diagonal band of unwatermarked pixels for long strings.
+  // After the fix, the X step grows by exactly the textWidth delta — the gap
+  // between text instances is constant (lineHeight × xGapMultiplier).
+  const xStepFor = (textWidth: number): number => {
+    const tiles = tilePositions(baseParams({ textWidth }));
+    const distinctXs = [...new Set(tiles.map((t) => t.x))].sort((a, b) => a - b);
+    return distinctXs[1] - distinctXs[0];
+  };
+  const shortStep = xStepFor(40);
+  const longStep = xStepFor(400);
+  // textWidth delta = 360. The step delta should equal it (gap is constant),
+  // not 360 × xSpacing = 576.
+  expect(longStep - shortStep).toBe(360);
 });

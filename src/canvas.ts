@@ -16,7 +16,11 @@ export interface CanvasRenderer {
 }
 
 const WATERMARK_ROTATION_RAD = (30 * Math.PI) / 180;
-const WATERMARK_X_SPACING = 1.6;
+// Gap between text instances along the rotation axis, in units of lineHeight.
+// 1.5 reproduces v0.3.0's short-text spacing exactly (40-px text + 16-px line
+// → 24-px gap) while no longer scaling the gap with the text length, which
+// was the cause of the #54 long-text diagonal-band bug.
+const WATERMARK_X_GAP_MULTIPLIER = 1.5;
 const WATERMARK_Y_SPACING = 2.5;
 const WATERMARK_LINE_HEIGHT_MULTIPLIER = 1.2;
 const WATERMARK_SIZE_DIVISOR = 28;
@@ -68,7 +72,7 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
       textWidth,
       lineHeight,
       rotationRad: WATERMARK_ROTATION_RAD,
-      xSpacing: WATERMARK_X_SPACING,
+      xGapMultiplier: WATERMARK_X_GAP_MULTIPLIER,
       ySpacing: WATERMARK_Y_SPACING,
     });
     for (const tile of tiles) {
