@@ -5,6 +5,20 @@ All notable changes to ID Sanitizer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-05-12
+
+### Added
+
+- **Watermark** in the toolbar — user-typed text rendered as a diagonal tiled mark across the canvas with an adjustable opacity slider (default 30%). Sits beneath redaction rectangles so a watermark line never reads through a redaction, and bakes into the downloaded PNG/JPEG. Independent of the rect-history stack — undo/redo doesn't flip it.
+
+### Changed
+
+- Refreshed PWA icons and favicon to a brand-aligned mark — cream-paper background with "ID" letters bisected by a black redaction bar. The maskable variant respects the W3C safe zone so circular / squircle launcher masks no longer clip the mark.
+
+### Fixed
+
+- Renamed the `FORM 0.1` corner annotation to `FORM IDS-001`. The original looked like a stale version number (frozen at 0.1 while the app moved to 0.2.0 / 0.3.0); the new code reads as a non-version administrative form identifier so it doesn't mislead.
+
 ## [0.2.0] - 2026-05-11
 
 ### Added
@@ -35,5 +49,6 @@ Initial release.
 - Self-hosted fonts (Fraunces, JetBrains Mono) via Fontsource — no CDN, no remote requests.
 - GitHub Pages deploy workflow on push to `main`.
 
+[0.3.0]: https://github.com/ceballosiker/id-sanitizer/releases/tag/v0.3.0
 [0.2.0]: https://github.com/ceballosiker/id-sanitizer/releases/tag/v0.2.0
 [0.1.0]: https://github.com/ceballosiker/id-sanitizer/releases/tag/v0.1.0
