@@ -12,7 +12,7 @@ registerSW({ immediate: true });
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <header>
-  <span class="form-id">FORM 0.1</span>
+  <span class="form-id">FORM IDS-001</span>
   <h1>ID Sanitizer</h1>
   <span class="offline-badge">✓ Works offline — disconnect to verify</span>
 </header>
