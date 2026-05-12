@@ -5,14 +5,11 @@ Redact personal info from photos of IDs — locally, in your browser, with no up
 [![CI](https://github.com/ceballosiker/id-sanitizer/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ceballosiker/id-sanitizer/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/github/v/tag/ceballosiker/id-sanitizer?label=version&color=1a1612)](./CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-1a1612.svg)](./LICENSE)
-[![PWA](https://img.shields.io/badge/PWA-installable-b8252b.svg)](https://ceballosiker.github.io/id-sanitizer/)
 [![Live demo](https://img.shields.io/badge/demo-live-1a1612.svg)](https://ceballosiker.github.io/id-sanitizer/)
 
 > **Heads up:** This is free software I built for myself.
 > No warranty, no guarantees — use at your own risk.
 > Verify your redactions before sharing anything important.
-
-**Live:** <https://ceballosiker.github.io/id-sanitizer/>
 
 ![Screenshot of the ID Sanitizer app](docs/hero.png)
 
