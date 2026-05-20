@@ -4,6 +4,7 @@ import './style.css';
 import { setupUpload } from './upload';
 import { createCanvasRenderer, type CanvasRenderer } from './canvas';
 import { setupRectTool, type Rect, type RectTool } from './rect-tool';
+import { setupCropTool, type CropTool } from './crop-tool';
 import { createHistory, type History } from './history';
 import { buildFilename, downloadBlob, formatToMime, type Format } from './download';
 import { registerSW } from 'virtual:pwa-register';
@@ -23,6 +24,15 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     Nothing leaves your device — the app makes no network requests at runtime.
   </p>
   <div id="toolbar" class="toolbar" hidden>
+    <button
+      type="button"
+      data-action="crop"
+      aria-pressed="false"
+      title="Crop"
+      disabled
+    >
+      Crop
+    </button>
     <button
       type="button"
       data-action="undo"
@@ -118,6 +128,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 const uploadEl = document.querySelector<HTMLDivElement>('#upload')!;
 const toolbar = document.querySelector<HTMLDivElement>('#toolbar')!;
+const cropBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=crop]')!;
 const undoBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=undo]')!;
 const redoBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=redo]')!;
 const grayscaleBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=grayscale]')!;
@@ -137,6 +148,7 @@ const versionEl = aboutDialog.querySelector<HTMLSpanElement>('[data-version]')!;
 
 let renderer: CanvasRenderer | null = null;
 let rectTool: RectTool | null = null;
+let cropTool: CropTool | null = null;
 let history: History<readonly Rect[]> | null = null;
 let originalName: string | undefined;
 let currentFormat: Format = 'png';
@@ -145,6 +157,60 @@ const updateToolbar = (): void => {
   undoBtn.disabled = !history?.canUndo();
   redoBtn.disabled = !history?.canRedo();
 };
+
+const enterCropMode = (): void => {
+  if (!renderer || cropTool) return;
+  const size = renderer.getImageSize();
+  if (!size) return;
+  const canvas = renderer.getCanvas();
+  if (!canvas) return;
+
+  // Disable sibling controls; the Crop button itself stays enabled so
+  // clicking it again can act as a cancel.
+  undoBtn.disabled = true;
+  redoBtn.disabled = true;
+  grayscaleBtn.disabled = true;
+  watermarkText.disabled = true;
+  watermarkOpacity.disabled = true;
+  downloadBtn.disabled = true;
+  formatInputs.forEach((r) => (r.disabled = true));
+  cropBtn.setAttribute('aria-pressed', 'true');
+
+  cropTool = setupCropTool(canvas, size, {
+    onPreviewChanged: (rect) => renderer?.setCropPreview(rect),
+    onConfirm: (rect) => {
+      renderer?.applyCrop(rect);
+      rectTool?.setRects([]);
+      history?.reset();
+      history?.push([]);
+      exitCropMode();
+      updateToolbar();
+    },
+    onCancel: () => exitCropMode(),
+  });
+};
+
+const exitCropMode = (): void => {
+  if (!cropTool) return;
+  cropTool.destroy();
+  cropTool = null;
+  renderer?.setCropPreview(null);
+  cropBtn.setAttribute('aria-pressed', 'false');
+  grayscaleBtn.disabled = false;
+  watermarkText.disabled = false;
+  watermarkOpacity.disabled = false;
+  downloadBtn.disabled = false;
+  formatInputs.forEach((r) => (r.disabled = false));
+  updateToolbar();
+};
+
+cropBtn.addEventListener('click', () => {
+  if (cropTool) {
+    exitCropMode();
+  } else {
+    enterCropMode();
+  }
+});
 
 const undo = (): void => {
   if (!rectTool || !history || rectTool.isDragging()) return;
@@ -213,6 +279,7 @@ downloadBtn.addEventListener('click', () => {
 });
 
 window.addEventListener('keydown', (e) => {
+  if (cropTool) return;
   if (!e.metaKey && !e.ctrlKey) return;
   if (e.code === 'KeyZ' && !e.shiftKey) {
     e.preventDefault();
@@ -224,6 +291,10 @@ window.addEventListener('keydown', (e) => {
 });
 
 setupUpload(uploadEl, (file) => {
+  // Forward-looking guard for #51 (re-upload). If a re-upload happens
+  // during crop mode, tear it down cleanly so the old cropTool doesn't
+  // hold pointers into the now-replaced canvas.
+  if (cropTool) exitCropMode();
   originalName = file.name;
   renderer = createCanvasRenderer(uploadEl);
   void renderer
@@ -242,9 +313,11 @@ setupUpload(uploadEl, (file) => {
           history?.push(rects);
           updateToolbar();
         },
+        () => cropTool === null,
       );
 
       toolbar.hidden = false;
+      cropBtn.disabled = false;
       grayscaleBtn.disabled = false;
       watermarkText.disabled = false;
       watermarkOpacity.disabled = false;
