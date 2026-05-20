@@ -19,6 +19,13 @@ async function dragOnCanvas(
   from: [number, number],
   to: [number, number],
 ): Promise<void> {
+  // The 400×400 fixture renders the canvas taller than the default 720-px
+  // viewport. A pointerdown at a client point past the viewport bottom never
+  // dispatches — the first drag of a test gets in because pointer capture
+  // forwards subsequent moves, but assertions that expect a fully-drawn
+  // redaction at image-space coords past the viewport edge silently fail.
+  // Same workaround as e2e/redact-touch.spec.ts and e2e/crop.spec.ts.
+  await canvas.scrollIntoViewIfNeeded();
   const coords = await canvas.evaluate(
     (el, [fx, fy, tx, ty]) => {
       const c = el as HTMLCanvasElement;
