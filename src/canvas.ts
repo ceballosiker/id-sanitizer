@@ -1,5 +1,6 @@
 import { toGrayscale } from './grayscale';
 import { tilePositions } from './watermark';
+import type { Rect } from './geometry';
 
 export type Overlay = {
   draw(ctx: CanvasRenderingContext2D): void;
@@ -10,9 +11,12 @@ export interface CanvasRenderer {
   setOverlays(overlays: readonly Overlay[]): void;
   setGrayscale(on: boolean): void;
   setWatermark(text: string, opacity: number): void;
+  setCropPreview(rect: Rect | null): void;
+  applyCrop(rect: Rect): void;
   redraw(): void;
   getBlob(mime: string, quality?: number): Promise<Blob>;
   getCanvas(): HTMLCanvasElement | null;
+  getImageSize(): { width: number; height: number } | null;
 }
 
 const WATERMARK_ROTATION_RAD = (30 * Math.PI) / 180;
@@ -46,7 +50,7 @@ function loadImageElement(file: File): Promise<HTMLImageElement> {
 }
 
 export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
-  let source: HTMLImageElement | null = null;
+  let source: HTMLImageElement | HTMLCanvasElement | null = null;
   let canvas: HTMLCanvasElement | null = null;
   let ctx: CanvasRenderingContext2D | null = null;
   let overlays: readonly Overlay[] = [];
@@ -54,6 +58,7 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
   let cachedGrayscale: ImageData | null = null;
   let watermarkText = '';
   let watermarkOpacity = 0.3;
+  let cropPreview: Rect | null = null;
 
   const drawWatermark = (): void => {
     if (!ctx || !canvas || watermarkText === '') return;
@@ -100,7 +105,65 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
       ctx.drawImage(source, 0, 0);
     }
     drawWatermark();
+
+    if (cropPreview === null) {
+      for (const overlay of overlays) overlay.draw(ctx);
+      return;
+    }
+
+    // Crop mode — dim pre-existing redactions (read-only signal) and add
+    // the dim-outside overlay + outline + handles. Scale is image-px per
+    // CSS-px and keeps stroke/handle sizes visually consistent across DPRs.
+    ctx.save();
+    ctx.globalAlpha = 0.4;
     for (const overlay of overlays) overlay.draw(ctx);
+    ctx.restore();
+
+    const cssWidth = Math.max(canvas.getBoundingClientRect().width, 1);
+    const scale = canvas.width / cssWidth;
+    const r = cropPreview;
+
+    // 1. Dim outside the crop rect with four black strips. Avoids any
+    //    clip()/save() interaction with the watermark/source layers.
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillRect(0, 0, canvas.width, r.y);
+    ctx.fillRect(0, r.y, r.x, r.h);
+    ctx.fillRect(r.x + r.w, r.y, canvas.width - (r.x + r.w), r.h);
+    ctx.fillRect(0, r.y + r.h, canvas.width, canvas.height - (r.y + r.h));
+    ctx.restore();
+
+    // 2. Crop outline.
+    ctx.save();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2 * scale;
+    ctx.strokeRect(r.x, r.y, r.w, r.h);
+    ctx.restore();
+
+    // 3. Eight square handles at corners + edge midpoints. The 8-px floor
+    //    keeps handles visible on tiny test fixtures (e.g. 32×32) where
+    //    12 * scale would round to zero.
+    const handleSize = Math.max(8, 12 * scale);
+    const half = handleSize / 2;
+    const anchors: Array<[number, number]> = [
+      [r.x, r.y],
+      [r.x + r.w / 2, r.y],
+      [r.x + r.w, r.y],
+      [r.x + r.w, r.y + r.h / 2],
+      [r.x + r.w, r.y + r.h],
+      [r.x + r.w / 2, r.y + r.h],
+      [r.x, r.y + r.h],
+      [r.x, r.y + r.h / 2],
+    ];
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1 * scale;
+    for (const [ax, ay] of anchors) {
+      ctx.fillRect(ax - half, ay - half, handleSize, handleSize);
+      ctx.strokeRect(ax - half, ay - half, handleSize, handleSize);
+    }
+    ctx.restore();
   };
 
   return {
@@ -120,6 +183,7 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
       cachedGrayscale = null;
       watermarkText = '';
       watermarkOpacity = 0.3;
+      cropPreview = null;
       container.replaceChildren(c);
       // Fire-and-forget the initial paint via rAF. load() resolves immediately
       // so consumers can wire up listeners; the rAF callback paints the base
@@ -146,6 +210,41 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
       redraw();
     },
 
+    setCropPreview(rect: Rect | null): void {
+      cropPreview = rect;
+      redraw();
+    },
+
+    applyCrop(rect: Rect): void {
+      if (!source || !canvas || !ctx) return;
+      // Render the source-only pixels (no overlays, no watermark) into an
+      // offscreen canvas. We crop the source, not the live canvas, so the
+      // watermark continues to scale relative to the new, smaller canvas
+      // dimensions rather than being baked in at the moment of crop.
+      const off = document.createElement('canvas');
+      off.width = rect.w;
+      off.height = rect.h;
+      const offCtx = off.getContext('2d');
+      if (!offCtx) throw new Error('Failed to acquire 2D context for crop');
+      // ctx.drawImage uses canvas.width/height when src is a canvas, and
+      // naturalWidth/naturalHeight when src is an image — both correct here.
+      offCtx.drawImage(source, -rect.x, -rect.y);
+
+      // Setting canvas.width clears the 2D context state, so do it before
+      // any redraw call that relies on it.
+      source = off;
+      canvas.width = rect.w;
+      canvas.height = rect.h;
+
+      cachedGrayscale = null;
+      cropPreview = null;
+      // Pre-crop overlay coordinates don't translate cleanly across the
+      // crop bounds; clearing here keeps the renderer self-consistent.
+      // main.ts also resets history; this is the renderer's own guarantee.
+      overlays = [];
+      redraw();
+    },
+
     redraw,
 
     getBlob(mime: string, quality?: number): Promise<Blob> {
@@ -164,6 +263,11 @@ export function createCanvasRenderer(container: HTMLElement): CanvasRenderer {
 
     getCanvas(): HTMLCanvasElement | null {
       return canvas;
+    },
+
+    getImageSize(): { width: number; height: number } | null {
+      if (!canvas) return null;
+      return { width: canvas.width, height: canvas.height };
     },
   };
 }
