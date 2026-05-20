@@ -1,32 +1,7 @@
 import type { Overlay } from './canvas';
+import { clientToImageSpace, normalizeRect, type Rect } from './geometry';
 
-export type Rect = { x: number; y: number; w: number; h: number };
-
-export function clientToImageSpace(
-  clientX: number,
-  clientY: number,
-  bounds: { left: number; top: number; width: number; height: number },
-  imageSize: { width: number; height: number },
-): { x: number; y: number } {
-  const scaleX = imageSize.width / bounds.width;
-  const scaleY = imageSize.height / bounds.height;
-  return {
-    x: (clientX - bounds.left) * scaleX,
-    y: (clientY - bounds.top) * scaleY,
-  };
-}
-
-export function normalizeRect(
-  start: { x: number; y: number },
-  end: { x: number; y: number },
-): Rect {
-  return {
-    x: Math.min(start.x, end.x),
-    y: Math.min(start.y, end.y),
-    w: Math.abs(end.x - start.x),
-    h: Math.abs(end.y - start.y),
-  };
-}
+export type { Rect };
 
 const rectToOverlay = (r: Rect): Overlay => ({
   draw: (ctx) => {
@@ -45,6 +20,7 @@ export function setupRectTool(
   canvas: HTMLCanvasElement,
   onOverlaysChanged: (overlays: readonly Overlay[]) => void,
   onCommit: (rects: readonly Rect[]) => void,
+  enabled: () => boolean = () => true,
 ): RectTool {
   let dragStart: { x: number; y: number } | null = null;
   let draft: Rect | null = null;
@@ -62,6 +38,7 @@ export function setupRectTool(
     });
 
   canvas.addEventListener('pointerdown', (e) => {
+    if (!enabled()) return;
     canvas.setPointerCapture(e.pointerId);
     dragStart = toImage(e);
     draft = { x: dragStart.x, y: dragStart.y, w: 0, h: 0 };
@@ -69,6 +46,7 @@ export function setupRectTool(
   });
 
   canvas.addEventListener('pointermove', (e) => {
+    if (!enabled()) return;
     if (!dragStart) return;
     draft = normalizeRect(dragStart, toImage(e));
     emit();
@@ -85,11 +63,15 @@ export function setupRectTool(
   };
 
   canvas.addEventListener('pointerup', (e) => {
+    if (!enabled()) return;
     canvas.releasePointerCapture(e.pointerId);
     finishDrag();
   });
 
-  canvas.addEventListener('pointercancel', finishDrag);
+  canvas.addEventListener('pointercancel', () => {
+    if (!enabled()) return;
+    finishDrag();
+  });
 
   return {
     getRects(): readonly Rect[] {

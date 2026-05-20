@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { clientToImageSpace, normalizeRect } from './rect-tool';
+import { clientToImageSpace, normalizeRect } from './geometry';
 
 const bounds = { left: 100, top: 50, width: 800, height: 400 };
 const imageSize = { width: 200, height: 100 };
