@@ -150,3 +150,6 @@ blob-report/
 
 # Superpowers brainstorm specs and plans (working artifacts, not project docs)
 docs/superpowers/
+.superpowers/
+
+CLAUDE.md
