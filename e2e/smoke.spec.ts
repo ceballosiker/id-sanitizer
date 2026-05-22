@@ -24,7 +24,7 @@ test('app shell renders semantic landmarks and offline badge', async ({ page }) 
 
 test('upload via file picker shows preview and removes the dropzone', async ({ page }) => {
   await page.goto('/');
-  await page.setInputFiles('input[type=file]', {
+  await page.setInputFiles('.dropzone input[type=file]', {
     name: 'sample.png',
     mimeType: 'image/png',
     buffer: tinyPngBuffer,
@@ -35,7 +35,7 @@ test('upload via file picker shows preview and removes the dropzone', async ({ p
 
 test('upload via file picker rejects unsupported types with inline error', async ({ page }) => {
   await page.goto('/');
-  await page.setInputFiles('input[type=file]', {
+  await page.setInputFiles('.dropzone input[type=file]', {
     name: 'doc.txt',
     mimeType: 'text/plain',
     buffer: Buffer.from('hello'),
@@ -63,14 +63,14 @@ test('upload via drag-drop shows preview', async ({ page }) => {
 test('error auto-clears when a valid upload follows a rejected one', async ({ page }) => {
   await page.goto('/');
 
-  await page.setInputFiles('input[type=file]', {
+  await page.setInputFiles('.dropzone input[type=file]', {
     name: 'doc.txt',
     mimeType: 'text/plain',
     buffer: Buffer.from('hello'),
   });
   await expect(page.locator('.upload-error')).toBeVisible();
 
-  await page.setInputFiles('input[type=file]', {
+  await page.setInputFiles('.dropzone input[type=file]', {
     name: 'sample.png',
     mimeType: 'image/png',
     buffer: tinyPngBuffer,
@@ -81,7 +81,7 @@ test('error auto-clears when a valid upload follows a rejected one', async ({ pa
 
 test('canvas preview matches the uploaded image dimensions', async ({ page }) => {
   await page.goto('/');
-  await page.setInputFiles('input[type=file]', {
+  await page.setInputFiles('.dropzone input[type=file]', {
     name: 'sample.png',
     mimeType: 'image/png',
     buffer: tinyPngBuffer,
@@ -101,7 +101,7 @@ test('toolbar is hidden before upload', async ({ page }) => {
 
 test('toolbar appears with both buttons disabled after upload', async ({ page }) => {
   await page.goto('/');
-  await page.setInputFiles('input[type=file]', {
+  await page.setInputFiles('.dropzone input[type=file]', {
     name: 'sample.png',
     mimeType: 'image/png',
     buffer: tinyPngBuffer,
@@ -114,7 +114,7 @@ test('toolbar appears with both buttons disabled after upload', async ({ page })
 
 test('download exports a PNG with sanitized filename', async ({ page }) => {
   await page.goto('/');
-  await page.setInputFiles('input[type=file]', {
+  await page.setInputFiles('.dropzone input[type=file]', {
     name: 'passport.png',
     mimeType: 'image/png',
     buffer: tinyPngBuffer,
@@ -130,7 +130,7 @@ test('download exports a PNG with sanitized filename', async ({ page }) => {
 
 test('download exports a JPEG when format toggle is set to JPEG', async ({ page }) => {
   await page.goto('/');
-  await page.setInputFiles('input[type=file]', {
+  await page.setInputFiles('.dropzone input[type=file]', {
     name: 'passport.png',
     mimeType: 'image/png',
     buffer: tinyPngBuffer,
