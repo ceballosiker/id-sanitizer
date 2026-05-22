@@ -5,6 +5,12 @@ All notable changes to ID Sanitizer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — v0.4.0
+
+### Added
+
+- Re-upload control: load a new image without page refresh; preserves grayscale, watermark, and format selection while resetting redactions. (#51)
+
 ## [0.3.0] - 2026-05-12
 
 ### Added
@@ -49,6 +55,7 @@ Initial release.
 - Self-hosted fonts (Fraunces, JetBrains Mono) via Fontsource — no CDN, no remote requests.
 - GitHub Pages deploy workflow on push to `main`.
 
+[Unreleased]: https://github.com/ceballosiker/id-sanitizer/compare/v0.3.0...HEAD
 [0.3.0]: https://github.com/ceballosiker/id-sanitizer/releases/tag/v0.3.0
 [0.2.0]: https://github.com/ceballosiker/id-sanitizer/releases/tag/v0.2.0
 [0.1.0]: https://github.com/ceballosiker/id-sanitizer/releases/tag/v0.1.0
