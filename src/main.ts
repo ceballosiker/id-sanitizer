@@ -308,11 +308,17 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-setupUpload(uploadEl, (file) => {
-  // Forward-looking guard for #51 (re-upload). If a re-upload happens
-  // during crop mode, tear it down cleanly so the old cropTool doesn't
-  // hold pointers into the now-replaced canvas.
+const loadImage = (file: File, preserveSettings: boolean): void => {
   if (cropTool) exitCropMode();
+
+  // Capture preservable UI state BEFORE rebuilding the renderer. On a
+  // first upload (preserveSettings=false) the captured values match the
+  // renderer's defaults, so re-applying them is harmless but unnecessary —
+  // we skip the calls instead.
+  const grayscaleOn = grayscaleBtn.getAttribute('aria-pressed') === 'true';
+  const wmText = watermarkText.value;
+  const wmOpacityPct = Number(watermarkOpacity.value);
+
   originalName = file.name;
   renderer = createCanvasRenderer(uploadEl);
   void renderer
@@ -320,6 +326,11 @@ setupUpload(uploadEl, (file) => {
     .then(() => {
       const canvas = renderer?.getCanvas();
       if (!canvas) return;
+
+      if (preserveSettings) {
+        renderer?.setGrayscale(grayscaleOn);
+        renderer?.setWatermark(wmText, wmOpacityPct / 100);
+      }
 
       history = createHistory<readonly Rect[]>(100);
       history.push([]);
@@ -345,4 +356,6 @@ setupUpload(uploadEl, (file) => {
     .catch((err: unknown) => {
       console.error('Canvas load failed:', err);
     });
-});
+};
+
+setupUpload(uploadEl, (file) => loadImage(file, false));
