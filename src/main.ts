@@ -26,6 +26,23 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div id="toolbar" class="toolbar" hidden>
     <button
       type="button"
+      data-action="replace-image"
+      class="toolbar-icon"
+      aria-label="Replace image"
+      title="Replace image"
+      disabled
+    >
+      ↑
+    </button>
+    <input
+      type="file"
+      data-action="replace-image-input"
+      accept="image/jpeg,image/png,image/webp"
+      hidden
+    />
+    <p class="reupload-error" role="alert" hidden></p>
+    <button
+      type="button"
       data-action="crop"
       aria-pressed="false"
       title="Crop"
@@ -140,6 +157,7 @@ const watermarkOpacityValue = toolbar.querySelector<HTMLOutputElement>(
   '[data-action=watermark-opacity-value]',
 )!;
 const downloadBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=download]')!;
+const replaceImageBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=replace-image]')!;
 const formatInputs = toolbar.querySelectorAll<HTMLInputElement>('input[name=format]');
 const aboutBtn = document.querySelector<HTMLButtonElement>('[data-action=about]')!;
 const aboutDialog = document.querySelector<HTMLDialogElement>('#about-dialog')!;
@@ -317,6 +335,7 @@ setupUpload(uploadEl, (file) => {
       );
 
       toolbar.hidden = false;
+      replaceImageBtn.disabled = false;
       cropBtn.disabled = false;
       grayscaleBtn.disabled = false;
       watermarkText.disabled = false;
