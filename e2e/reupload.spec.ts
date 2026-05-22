@@ -84,6 +84,8 @@ test('preserves grayscale + watermark + format and resets rect history', async (
   await page.locator('[data-action=watermark-opacity]').fill('70');
   await page.locator('[data-action=grayscale]').click();
   await expect(page.locator('[data-action=grayscale]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('label:has(input[value=jpeg])').click();
+  await expect(page.locator('input[name=format][value=jpeg]')).toBeChecked();
   await dragOnCanvas(page, canvas, [50, 50], [150, 150]);
   await expect(page.locator('[data-action=undo]')).toBeEnabled();
 
@@ -113,6 +115,7 @@ test('preserves grayscale + watermark + format and resets rect history', async (
   await expect(page.locator('[data-action=grayscale]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('[data-action=watermark-text]')).toHaveValue('PRESERVE ME');
   await expect(page.locator('[data-action=watermark-opacity]')).toHaveValue('70');
+  await expect(page.locator('input[name=format][value=jpeg]')).toBeChecked();
 
   // Confirm-accept path was actually taken.
   expect(dialogSeen).toBe(true);
