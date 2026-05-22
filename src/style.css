@@ -414,6 +414,24 @@ main p {
   cursor: not-allowed;
 }
 
+.reupload-error {
+  margin: 0;
+  color: var(--stamp);
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  align-self: center;
+}
+
+.toolbar-icon {
+  min-width: 2.25rem;
+  padding-inline: 0.5rem;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
 /* ───── Footer ─────
    Dashed perforation line, mono link captions, redaction-bar
    hover that "redacts" the link text. */
