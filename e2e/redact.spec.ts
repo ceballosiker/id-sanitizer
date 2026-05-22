@@ -3,7 +3,7 @@ import { makeSolidPng } from './fixtures';
 
 async function uploadRedImage(page: Page): Promise<Locator> {
   await page.goto('/');
-  await page.setInputFiles('input[type=file]', {
+  await page.setInputFiles('.dropzone input[type=file]', {
     name: 'red.png',
     mimeType: 'image/png',
     buffer: makeSolidPng(64, 64, [255, 0, 0]),
