@@ -1,7 +1,7 @@
 import '@fontsource-variable/fraunces/opsz.css';
 import '@fontsource-variable/jetbrains-mono/index.css';
 import './style.css';
-import { setupUpload } from './upload';
+import { setupUpload, pickFirstValidImage, INVALID_FILE_TYPE_MESSAGE } from './upload';
 import { createCanvasRenderer, type CanvasRenderer } from './canvas';
 import { setupRectTool, type Rect, type RectTool } from './rect-tool';
 import { setupCropTool, type CropTool } from './crop-tool';
@@ -158,6 +158,10 @@ const watermarkOpacityValue = toolbar.querySelector<HTMLOutputElement>(
 )!;
 const downloadBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=download]')!;
 const replaceImageBtn = toolbar.querySelector<HTMLButtonElement>('[data-action=replace-image]')!;
+const replaceImageInput = toolbar.querySelector<HTMLInputElement>(
+  '[data-action=replace-image-input]',
+)!;
+const reuploadError = toolbar.querySelector<HTMLParagraphElement>('.reupload-error')!;
 const formatInputs = toolbar.querySelectorAll<HTMLInputElement>('input[name=format]');
 const aboutBtn = document.querySelector<HTMLButtonElement>('[data-action=about]')!;
 const aboutDialog = document.querySelector<HTMLDialogElement>('#about-dialog')!;
@@ -359,3 +363,27 @@ const loadImage = (file: File, preserveSettings: boolean): void => {
 };
 
 setupUpload(uploadEl, (file) => loadImage(file, false));
+
+replaceImageBtn.addEventListener('click', () => {
+  reuploadError.hidden = true;
+  reuploadError.textContent = '';
+  if (history?.canUndo()) {
+    if (!window.confirm('Replace image? Your redactions will be cleared.')) {
+      return;
+    }
+  }
+  replaceImageInput.click();
+});
+
+replaceImageInput.addEventListener('change', () => {
+  reuploadError.hidden = true;
+  reuploadError.textContent = '';
+  const file = pickFirstValidImage(replaceImageInput.files ?? []);
+  replaceImageInput.value = '';
+  if (!file) {
+    reuploadError.textContent = INVALID_FILE_TYPE_MESSAGE;
+    reuploadError.hidden = false;
+    return;
+  }
+  loadImage(file, true);
+});
