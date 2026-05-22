@@ -1,4 +1,8 @@
-const ACCEPTED_TYPES = new Set<string>(['image/jpeg', 'image/png', 'image/webp']);
+const ACCEPTED_TYPES_LIST = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export const ACCEPTED_IMAGE_TYPES_ATTR = ACCEPTED_TYPES_LIST.join(',');
+export const INVALID_FILE_TYPE_MESSAGE = 'Unsupported file type. Use JPG, PNG, or WebP.';
+
+const ACCEPTED_TYPES = new Set<string>(ACCEPTED_TYPES_LIST);
 
 export function pickFirstValidImage(files: ArrayLike<File>): File | null {
   for (let i = 0; i < files.length; i++) {
@@ -13,7 +17,7 @@ const DROPZONE_HTML = `
   <button type="button" class="upload-button">Choose file</button>
   <input
     type="file"
-    accept="image/jpeg,image/png,image/webp"
+    accept="${ACCEPTED_IMAGE_TYPES_ATTR}"
     hidden
   />
   <p class="upload-error" role="alert" hidden></p>
@@ -42,7 +46,7 @@ export function setupUpload(container: HTMLElement, onImageLoaded: (file: File) 
     if (!files || files.length === 0) return;
     const file = pickFirstValidImage(files);
     if (!file) {
-      showError('Unsupported file type. Use JPG, PNG, or WebP.');
+      showError(INVALID_FILE_TYPE_MESSAGE);
       return;
     }
     onImageLoaded(file);
