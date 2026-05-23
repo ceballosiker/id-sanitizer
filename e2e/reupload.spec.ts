@@ -1,21 +1,11 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { makeSolidPng } from './fixtures';
+import { uploadImage, dragOnCanvas } from './helpers';
 import { ACCEPTED_IMAGE_TYPES_ATTR, INVALID_FILE_TYPE_MESSAGE } from '../src/upload';
 
 const REUPLOAD_BTN = '[data-action=replace-image]';
 const REUPLOAD_INPUT = '[data-action=replace-image-input]';
 const REUPLOAD_ERROR = '.reupload-error';
-
-async function uploadImage(page: Page, name: string, buffer: Buffer): Promise<Locator> {
-  await page.setInputFiles('.dropzone input[type=file]', {
-    name,
-    mimeType: 'image/png',
-    buffer,
-  });
-  const canvas = page.locator('.upload-preview');
-  await expect(canvas).toBeVisible();
-  return canvas;
-}
 
 async function reupload(page: Page, name: string, buffer: Buffer): Promise<void> {
   await page.setInputFiles(REUPLOAD_INPUT, {
@@ -23,35 +13,6 @@ async function reupload(page: Page, name: string, buffer: Buffer): Promise<void>
     mimeType: 'image/png',
     buffer,
   });
-}
-
-async function dragOnCanvas(
-  page: Page,
-  canvas: Locator,
-  from: [number, number],
-  to: [number, number],
-): Promise<void> {
-  // Same viewport workaround used by watermark/crop/redact-touch specs.
-  await canvas.scrollIntoViewIfNeeded();
-  const coords = await canvas.evaluate(
-    (el, [fx, fy, tx, ty]) => {
-      const c = el as HTMLCanvasElement;
-      const r = c.getBoundingClientRect();
-      const sx = r.width / c.width;
-      const sy = r.height / c.height;
-      return {
-        x1: r.left + fx * sx,
-        y1: r.top + fy * sy,
-        x2: r.left + tx * sx,
-        y2: r.top + ty * sy,
-      };
-    },
-    [from[0], from[1], to[0], to[1]],
-  );
-  await page.mouse.move(coords.x1, coords.y1);
-  await page.mouse.down();
-  await page.mouse.move(coords.x2, coords.y2, { steps: 8 });
-  await page.mouse.up();
 }
 
 const imageA = (): Buffer => makeSolidPng(400, 400, [255, 0, 0]);
