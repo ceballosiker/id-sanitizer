@@ -196,3 +196,20 @@ test('long watermark text tiles without a diagonal unwatermarked band (#54)', as
   // unwatermarked source pixels stays well under a quarter of the canvas.
   expect(result.worstRun).toBeLessThan(result.canvasWidth / 4);
 });
+
+test.describe('localized placeholder', () => {
+  test.use({ locale: 'en-US' });
+
+  test("placeholder shows today's date in the configured locale", async ({ page }) => {
+    await page.goto('/');
+    const expected = `For [purpose] · ${new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    }).format(new Date())}`;
+    const placeholder = await page
+      .locator('[data-action=watermark-text]')
+      .getAttribute('placeholder');
+    expect(placeholder).toBe(expected);
+  });
+});
