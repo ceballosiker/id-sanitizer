@@ -7,10 +7,12 @@ import { setupRectTool, type Rect, type RectTool } from './rect-tool';
 import { setupCropTool, type CropTool } from './crop-tool';
 import { createHistory, type History } from './history';
 import { buildFilename, downloadBlob, formatToMime, type Format } from './download';
+import { getWatermarkPlaceholder } from './watermark-placeholder';
 import { registerSW } from 'virtual:pwa-register';
 
 registerSW({ immediate: true });
 
+const watermarkPlaceholder = getWatermarkPlaceholder(new Date(), navigator.language);
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <header>
   <span class="form-id">FORM IDS-001</span>
@@ -97,7 +99,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         type="text"
         id="watermark-text"
         data-action="watermark-text"
-        placeholder="For [purpose] · YYYY-MM-DD"
+        placeholder="${watermarkPlaceholder}"
         maxlength="80"
         disabled
       />
