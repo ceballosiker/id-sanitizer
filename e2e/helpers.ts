@@ -2,7 +2,6 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { makeSolidPng } from './fixtures';
 
 export async function uploadImage(page: Page, name: string, buffer: Buffer): Promise<Locator> {
-  await page.goto('/');
   await page.setInputFiles('.dropzone input[type=file]', {
     name,
     mimeType: 'image/png',
@@ -14,6 +13,7 @@ export async function uploadImage(page: Page, name: string, buffer: Buffer): Pro
 }
 
 export async function uploadRedImage(page: Page, width = 64, height = 64): Promise<Locator> {
+  await page.goto('/');
   return uploadImage(page, 'red.png', makeSolidPng(width, height, [255, 0, 0]));
 }
 
