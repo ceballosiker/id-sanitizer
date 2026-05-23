@@ -1,51 +1,5 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
-import { makeSolidPng } from './fixtures';
-
-async function uploadLargeRedImage(page: Page): Promise<Locator> {
-  await page.goto('/');
-  await page.setInputFiles('.dropzone input[type=file]', {
-    name: 'red.png',
-    mimeType: 'image/png',
-    buffer: makeSolidPng(400, 400, [255, 0, 0]),
-  });
-  const canvas = page.locator('.upload-preview');
-  await expect(canvas).toBeVisible();
-  return canvas;
-}
-
-async function dragOnCanvas(
-  page: Page,
-  canvas: Locator,
-  from: [number, number],
-  to: [number, number],
-): Promise<void> {
-  // The 400×400 fixture renders the canvas taller than the default 720-px
-  // viewport. A pointerdown at a client point past the viewport bottom never
-  // dispatches — the first drag of a test gets in because pointer capture
-  // forwards subsequent moves, but assertions that expect a fully-drawn
-  // redaction at image-space coords past the viewport edge silently fail.
-  // Same workaround as e2e/redact-touch.spec.ts and e2e/crop.spec.ts.
-  await canvas.scrollIntoViewIfNeeded();
-  const coords = await canvas.evaluate(
-    (el, [fx, fy, tx, ty]) => {
-      const c = el as HTMLCanvasElement;
-      const r = c.getBoundingClientRect();
-      const sx = r.width / c.width;
-      const sy = r.height / c.height;
-      return {
-        x1: r.left + fx * sx,
-        y1: r.top + fy * sy,
-        x2: r.left + tx * sx,
-        y2: r.top + ty * sy,
-      };
-    },
-    [from[0], from[1], to[0], to[1]],
-  );
-  await page.mouse.move(coords.x1, coords.y1);
-  await page.mouse.down();
-  await page.mouse.move(coords.x2, coords.y2, { steps: 8 });
-  await page.mouse.up();
-}
+import { expect, test, type Locator } from '@playwright/test';
+import { uploadRedImage, dragOnCanvas, pixelAt } from './helpers';
 
 // Count how many pixels along a horizontal stripe deviate from the source colour
 // by more than a small tolerance. Watermark text only covers a fraction of the
@@ -78,19 +32,6 @@ async function countNonSourcePixels(
   );
 }
 
-async function pixelAt(canvas: Locator, x: number, y: number): Promise<[number, number, number]> {
-  return canvas.evaluate(
-    (el, [px, py]) => {
-      const c = el as HTMLCanvasElement;
-      const ctx = c.getContext('2d');
-      if (!ctx) throw new Error('no 2d context');
-      const d = ctx.getImageData(px, py, 1, 1).data;
-      return [d[0], d[1], d[2]] as [number, number, number];
-    },
-    [x, y],
-  );
-}
-
 test('watermark inputs are disabled before upload', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#toolbar')).toBeHidden();
@@ -99,13 +40,13 @@ test('watermark inputs are disabled before upload', async ({ page }) => {
 });
 
 test('watermark inputs become enabled after upload', async ({ page }) => {
-  await uploadLargeRedImage(page);
+  await uploadRedImage(page, 400, 400);
   await expect(page.locator('[data-action=watermark-text]')).toBeEnabled();
   await expect(page.locator('[data-action=watermark-opacity]')).toBeEnabled();
 });
 
 test('typing text draws a watermark on the canvas', async ({ page }) => {
-  const canvas = await uploadLargeRedImage(page);
+  const canvas = await uploadRedImage(page, 400, 400);
   expect(await countNonSourcePixels(canvas, 200, [255, 0, 0])).toBe(0);
 
   await page.locator('[data-action=watermark-text]').fill('TEST WATERMARK');
@@ -113,7 +54,7 @@ test('typing text draws a watermark on the canvas', async ({ page }) => {
 });
 
 test('clearing the text removes the watermark', async ({ page }) => {
-  const canvas = await uploadLargeRedImage(page);
+  const canvas = await uploadRedImage(page, 400, 400);
   const text = page.locator('[data-action=watermark-text]');
   await text.fill('TEST');
   expect(await countNonSourcePixels(canvas, 200, [255, 0, 0])).toBeGreaterThan(0);
@@ -122,7 +63,7 @@ test('clearing the text removes the watermark', async ({ page }) => {
 });
 
 test('opacity 0 hides the watermark; opacity 100 makes it solid', async ({ page }) => {
-  const canvas = await uploadLargeRedImage(page);
+  const canvas = await uploadRedImage(page, 400, 400);
   await page.locator('[data-action=watermark-text]').fill('TEST');
   const slider = page.locator('[data-action=watermark-opacity]');
 
@@ -144,7 +85,7 @@ test('opacity 0 hides the watermark; opacity 100 makes it solid', async ({ page 
 });
 
 test('opacity slider live-updates the displayed percent', async ({ page }) => {
-  await uploadLargeRedImage(page);
+  await uploadRedImage(page, 400, 400);
   const slider = page.locator('[data-action=watermark-opacity]');
   const out = page.locator('[data-action=watermark-opacity-value]');
   await expect(out).toHaveText('30%');
@@ -153,7 +94,7 @@ test('opacity slider live-updates the displayed percent', async ({ page }) => {
 });
 
 test('watermark renders below redaction rectangles', async ({ page }) => {
-  const canvas = await uploadLargeRedImage(page);
+  const canvas = await uploadRedImage(page, 400, 400);
   await page.locator('[data-action=watermark-text]').fill('TEST');
   await dragOnCanvas(page, canvas, [150, 150], [250, 250]);
   const [r, g, b] = await pixelAt(canvas, 200, 200);
@@ -163,7 +104,7 @@ test('watermark renders below redaction rectangles', async ({ page }) => {
 });
 
 test('undo leaves the watermark text and opacity untouched', async ({ page }) => {
-  const canvas = await uploadLargeRedImage(page);
+  const canvas = await uploadRedImage(page, 400, 400);
   const text = page.locator('[data-action=watermark-text]');
   const slider = page.locator('[data-action=watermark-opacity]');
   await text.fill('TEST');
@@ -176,7 +117,7 @@ test('undo leaves the watermark text and opacity untouched', async ({ page }) =>
 });
 
 test('downloaded PNG bakes the watermark and the redaction rect', async ({ page }) => {
-  const canvas = await uploadLargeRedImage(page);
+  const canvas = await uploadRedImage(page, 400, 400);
   await page.locator('[data-action=watermark-text]').fill('TEST');
   await dragOnCanvas(page, canvas, [150, 150], [250, 250]);
 
@@ -211,7 +152,7 @@ test('downloaded PNG bakes the watermark and the redaction rect', async ({ page 
 });
 
 test('long watermark text tiles without a diagonal unwatermarked band (#54)', async ({ page }) => {
-  const canvas = await uploadLargeRedImage(page);
+  const canvas = await uploadRedImage(page, 400, 400);
   // 55-character watermark — the kind of "For BankName Verification YYYY-MM-DD"
   // string that exposed the spacing bug in production. Before the fix, the
   // tile step grew with textWidth, producing a 300+ px continuous source-color
