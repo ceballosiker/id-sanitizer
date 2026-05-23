@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { makeSolidPng } from './fixtures';
+import { uploadRedImage, pixelAt } from './helpers';
 
 // Mobile-style viewport that's smaller than the page's natural height so the
 // browser can interpret a touch drag as a pan gesture (the gesture-recognition
@@ -8,18 +8,6 @@ test.use({
   hasTouch: true,
   viewport: { width: 360, height: 640 },
 });
-
-async function uploadRedImage(page: Page): Promise<Locator> {
-  await page.goto('/');
-  await page.setInputFiles('.dropzone input[type=file]', {
-    name: 'red.png',
-    mimeType: 'image/png',
-    buffer: makeSolidPng(64, 64, [255, 0, 0]),
-  });
-  const canvas = page.locator('.upload-preview');
-  await expect(canvas).toBeVisible();
-  return canvas;
-}
 
 // Real touchscreen drag via the Chromium DevTools Protocol. Playwright's
 // page.mouse generates pointer events of type "mouse", which bypass touch-
@@ -78,19 +66,6 @@ async function touchDragOnCanvas(
     type: 'touchEnd',
     touchPoints: [],
   });
-}
-
-async function pixelAt(canvas: Locator, x: number, y: number): Promise<[number, number, number]> {
-  return canvas.evaluate(
-    (el, [px, py]) => {
-      const c = el as HTMLCanvasElement;
-      const ctx = c.getContext('2d');
-      if (!ctx) throw new Error('no 2d context');
-      const d = ctx.getImageData(px, py, 1, 1).data;
-      return [d[0], d[1], d[2]] as [number, number, number];
-    },
-    [x, y],
-  );
 }
 
 test('touch drag draws a rectangle that follows the finger', async ({ page }) => {
