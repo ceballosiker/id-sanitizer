@@ -45,6 +45,10 @@ your image is processed entirely in the browser. You can verify this:
    Android, Safari iOS via Add to Home Screen).
 2. Drop an image (JPG / PNG / WebP) onto the page or click _Choose file_.
 3. _Optional pre-redaction transforms:_
+   - **Crop** — click _Crop_, drag a rectangle to mark the area to keep,
+     then _Confirm_ (or _Cancel_ to back out). Pixels outside the
+     rectangle are discarded before export. Independent of undo/redo,
+     which only walks redactions.
    - **Grayscale** — toggle to render the canvas (and bake the export) in
      black-and-white. Useful when only the information matters, not the
      biometric photo.
